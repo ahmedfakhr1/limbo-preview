@@ -19,6 +19,39 @@
     window.matchMedia('(min-width: 900px)').addEventListener('change', function (m) { if (m.matches) setNav(false); });
   }
 
+  /* menu jump bar: highlight the section in view */
+  var jump = document.querySelector('.mjump');
+  if (jump) {
+    var jt = jump.querySelector('.mj-track');
+    var links = Array.prototype.slice.call(jt.querySelectorAll('a'));
+    var secs = links.map(function (a) { return document.getElementById(a.getAttribute('href').slice(1)); });
+    var cur = null, spyTick = false;
+    var setCur = function (i) {
+      if (i === cur) return;
+      cur = i;
+      links.forEach(function (a, k) { if (k === i) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
+      var a = links[i];
+      if (a) {
+        var left = a.offsetLeft - (jt.clientWidth - a.offsetWidth) / 2;
+        jt.scrollTo({ left: left, behavior: reduce.matches ? 'auto' : 'smooth' });
+      }
+    };
+    var spy = function () {
+      spyTick = false;
+      var line = (parseFloat(getComputedStyle(root).getPropertyValue('--hdr')) || 64) + jump.offsetHeight + 24;
+      var idx = -1;
+      secs.forEach(function (s, k) { if (s && s.getBoundingClientRect().top <= line) idx = k; });
+      setCur(idx);
+    };
+    window.addEventListener('scroll', function () { if (!spyTick) { spyTick = true; requestAnimationFrame(spy); } }, { passive: true });
+    window.addEventListener('resize', spy);
+    jt.addEventListener('click', function (e) {
+      var a = e.target.closest('a');
+      if (a) setCur(links.indexOf(a));
+    });
+    spy();
+  }
+
   /* reveals and draw-in */
   var targets = document.querySelectorAll('[data-reveal], .art[data-draw]');
   if ('IntersectionObserver' in window && !reduce.matches) {
